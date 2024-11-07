@@ -1,0 +1,33 @@
+name: publish nuget package
+
+on:
+  push:
+    branches:
+      - release  # Replace with your specific branch name
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # install Dotnet ON Github worker
+    - name: Setup .NET Core SDK 8.0.x
+      uses: actions/setup-dotnet@v1.7.2
+      with:
+          dotnet-version: 8.0.x   
+
+    # restore project (deps)
+    - name: Install dependencies
+      run: dotnet restore
+
+    - name: Pack on github
+      run: |
+        dotnet pack -c Release -o /home/runner/work/out
+
+    - name: Push to Nuget
+      run: |
+        latest_file=$(ls -t /home/runner/work/out | head -n 1)
+        dotnet nuget push "/home/runner/work/out/$latest_file" --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
